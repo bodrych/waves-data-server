@@ -1,0 +1,34 @@
+{-# STDLIB_VERSION 6 #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+{-# CONTENT_TYPE DAPP #-}
+
+let creationFee = 100_000_000
+let separator = "_"
+func keyStatus(name: String) = [name, "status"].makeString(separator)
+func keyOwner(name: String) = [name, "owner"].makeString(separator)
+func keyData(name: String) = [name, "data"].makeString(separator)
+
+@Callable(i)
+func create(name: String) = {
+  let status = name.keyStatus().getBoolean().valueOrElse(false)
+  if (status) then "the name is already occupied".throw() else
+  let pmt = i.payments[0].value()
+  if (pmt.assetId.isDefined()) then "only waves".throw() else
+  if (creationFee > pmt.amount) then ["you have to pay ", toString(creationFee), " wavelets"].makeString("").throw() else
+  ([
+    BooleanEntry(name.keyStatus(), true),
+    BinaryEntry(name.keyOwner(), i.caller.bytes),
+    BinaryEntry(name.keyData(), base58'')
+  ], unit)
+}
+
+@Callable(i)
+func upload(name: String, data: ByteVector) = {
+  let status = name.keyStatus().getBoolean().valueOrElse(false)
+  if (!status) then "The name is not occupied".throw() else
+  let owner = name.keyOwner().getBinary().valueOrErrorMessage("The name owner is not defined")
+  if (owner != i.caller.bytes) then "You are not name owner".throw() else
+  ([
+    BinaryEntry(name.keyData(), data)
+  ], unit)
+}
