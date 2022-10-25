@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html><head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body>
+	<label>Waves hosting name</label>
+	<input id="name">
+	<button onclick="create()">Create name</button><br>
+	<label>Target file</label>
+	<input type="file" id="file">
+	<button onclick="upload()">Upload file</button>
+
+	<script>
+		const dApp = '3N5YvPZJa2jFjRv6A1mY6JJYB4Tc6AhhQpc'
+		const getBase64 = function (file) {
+			return new Promise((resolve, reject) => {
+				const reader = new FileReader()
+				reader.readAsDataURL(file)
+				reader.onload = () => resolve(reader.result)
+				reader.onerror = error => reject(error)
+			})
+		}
+		const readPage = async function (file) {
+			let data = await getBase64(file)
+			return data.split(';')[1].replace(',',':')
+		}
+		const upload = async function() {
+			console.log("test")
+			const file = document.querySelector("#file").files[0]
+			const name = document.querySelector("#name").value
+			const page = await readPage(file)
+			console.log(page)
+			const params = {
+				type: 16,
+				data: {
+					fee: {
+						assetId: 'WAVES',
+						tokens: '0.005'
+					},
+					dApp: dApp,
+					call: {
+						args: [
+						{ type: 'string', value: name },
+						{ type: 'binary', value: page }
+						],
+						function: 'upload'
+					},
+					payment: []
+				}
+			}
+			try {
+				const result = await window.WavesKeeper.signAndPublishTransaction(params)
+				const data = JSON.parse(result)
+				return data
+			} catch (err) {
+				alert(err.message)
+				console.log(err)
+			}
+		}
+		const create = async function() {
+			const name = document.querySelector("#name").value
+			const params = {
+				type: 16,
+				data: {
+					fee: {
+						assetId: 'WAVES',
+						tokens: '0.005'
+					},
+					dApp: dApp,
+					call: {
+						args: [
+						{ type: 'string', value: name }
+						],
+						function: 'create'
+					},
+					payment: [
+					{ amount: 100000000, assetId: null }
+					]
+				}
+			}
+			try {
+				const result = await window.WavesKeeper.signAndPublishTransaction(params)
+				const data = JSON.parse(result)
+				return data
+			} catch (err) {
+				alert(err.message)
+				console.log(err)
+			}
+		}
+		const signAndPublishTx = async function(params) {
+			try {
+				let res = await Waves.signAndPublishTransaction(params)
+				} catch (err) {
+					alert(err.message)
+					console.log(err)
+				}
+			}
+		</script>
+	
+	
+</body></html>
