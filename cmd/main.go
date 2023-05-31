@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os/exec"
@@ -85,7 +84,7 @@ func main() {
 			return
 		}
 
-		body, readErr := ioutil.ReadAll(res.Body)
+		body, readErr := io.ReadAll(res.Body)
 		if readErr != nil {
 			log.Print(readErr)
 			http.NotFound(w, r)
