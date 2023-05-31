@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -45,17 +46,20 @@ func main() {
 		id := r.URL.Query().Get("id")
 
 		if id == "" {
-			fmt.Fprintf(w, `
-                <!DOCTYPE html>
-                    <html>
-                        <head>
-                            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-                        </head>
-                        <body>
-                            <p>Welcome! Go to <a href="/?id=%s">home</a> page</p>
-                        </body>
-                    </html>
-                `, homePageId)
+			_, err := fmt.Fprintf(w, `
+			                <!DOCTYPE html>
+			                    <html>
+			                        <head>
+			                            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+			                        </head>
+			                        <body>
+			                            <p>Welcome! Go to <a href="/?id=%s">home</a> page</p>
+			                        </body>
+			                    </html>
+			                `, homePageId)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 
@@ -68,7 +72,12 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
-		defer res.Body.Close()
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(res.Body)
 
 		if res.StatusCode != 200 {
 			log.Print("No data")
@@ -105,7 +114,12 @@ func main() {
 	port := 8081
 	addr := fmt.Sprintf(":%d", port)
 
-	go open(fmt.Sprintf("http://localhost:%d/", port))
+	go func() {
+		err := open(fmt.Sprintf("http://localhost:%d/", port))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	log.Fatal(http.ListenAndServe(addr, nil))
 
